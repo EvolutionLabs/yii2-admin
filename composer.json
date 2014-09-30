@@ -1,5 +1,5 @@
 {
-	"name": "mdmsoft/yii2-admin",
+	"name": "evolutionlabs/yii2-admin",
 	"description": "Auth manager for Yii2 ",
 	"keywords": ["yii", "admin", "auth"],
 	"type": "yii2-extension",
