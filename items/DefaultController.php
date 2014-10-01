@@ -4,9 +4,12 @@ namespace mdm\admin\items;
 
 class DefaultController extends \yii\web\Controller
 {
-    public function actionIndex()
-    {
-        return $this->render('index');
-    }
+
+	public $layout = 'top-menu';
+
+	public function actionIndex()
+	{
+		return $this->render('index');
+	}
 
 }
