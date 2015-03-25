@@ -20,7 +20,7 @@ $this->params['breadcrumbs'][] = $this->title;
         echo Html::textInput('search_av', '', ['class' => 'role-search', 'data-target' => 'new']).' ';
         echo Html::a('<span class="glyphicon glyphicon-refresh"></span>', '', ['id'=>'btn-refresh']);
         echo '<br>';
-        echo Html::listBox('routes[]', '', $new, [
+        echo Html::listBox('routes', '', $new, [
             'id' => 'new',
             'multiple' => true,
             'size' => 20,
@@ -38,7 +38,7 @@ $this->params['breadcrumbs'][] = $this->title;
         Exists:
         <?php
         echo Html::textInput('search_asgn', '', ['class' => 'role-search', 'data-target' => 'exists']) . '<br>';
-        echo Html::listBox('routes[]', '', $exists, [
+        echo Html::listBox('routes', '', $exists, [
             'id' => 'exists',
             'multiple' => true,
             'size' => 20,
