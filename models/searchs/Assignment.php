@@ -6,13 +6,19 @@ use yii\base\Model;
 use yii\data\ActiveDataProvider;
 
 /**
- * AssigmentSearch represents the model behind the search form about Assigment.
+ * AssignmentSearch represents the model behind the search form about Assignment.
+ * 
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
-class Assigment extends Model
+class Assignment extends Model
 {
     public $id;
     public $username;
 
+    /**
+     * @inheritdoc
+     */
     public function rules()
     {
         return [
@@ -26,13 +32,14 @@ class Assigment extends Model
     public function attributeLabels()
     {
         return [
-            'id' => 'ID',
-            'username' => 'Username',
+            'id' => Yii::t('rbac-admin', 'ID'),
+            'username' => Yii::t('rbac-admin', 'Username'),
+            'name' => Yii::t('rbac-admin', 'Name'),
         ];
     }
 
     /**
-     *
+     * Create data provider for Assignment model.
      * @param  array                        $params
      * @param  \yii\db\ActiveRecord         $class
      * @param  string                       $usernameField

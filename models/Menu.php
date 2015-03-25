@@ -8,15 +8,18 @@ use mdm\admin\components\Configs;
 /**
  * This is the model class for table "menu".
  *
- * @property integer $id
- * @property string $name
- * @property integer $parent
- * @property string $route
- * @property integer $order
- * @property string $data
+ * @property integer $id Menu id(autoincrement)
+ * @property string $name Menu name
+ * @property integer $parent Menu parent
+ * @property string $route Route for this menu
+ * @property integer $order Menu order
+ * @property string $data Extra information for this menu
  *
- * @property Menu $menuParent
- * @property Menu[] $menus
+ * @property Menu $menuParent Menu parent
+ * @property Menu[] $menus Menu children
+ *
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
 class Menu extends \yii\db\ActiveRecord
 {
@@ -27,7 +30,7 @@ class Menu extends \yii\db\ActiveRecord
      */
     public static function tableName()
     {
-        return '{{%menu}}';
+        return Configs::instance()->menuTable;
     }
 
     /**
@@ -61,6 +64,9 @@ class Menu extends \yii\db\ActiveRecord
         ];
     }
 
+    /**
+     * Use to loop detected.
+     */
     public function filterParent()
     {
         $value = $this->parent_name;
@@ -86,15 +92,18 @@ class Menu extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
-            'id' => 'ID',
-            'name' => 'Name',
-            'parent' => 'Parent',
-            'parent_name' => 'Parent',
-            'route' => 'Route',
+            'id' => Yii::t('rbac-admin', 'ID'),
+            'name' => Yii::t('rbac-admin', 'Name'),
+            'parent' => Yii::t('rbac-admin', 'Parent'),
+            'parent_name' => Yii::t('rbac-admin', 'Parent Name'),
+            'route' => Yii::t('rbac-admin', 'Route'),
+            'order' => Yii::t('rbac-admin', 'Order'),
+            'data' => Yii::t('rbac-admin', 'Data'),
         ];
     }
 
     /**
+     * Get menu parent
      * @return \yii\db\ActiveQuery
      */
     public function getMenuParent()
@@ -103,6 +112,7 @@ class Menu extends \yii\db\ActiveRecord
     }
 
     /**
+     * Get menu children
      * @return \yii\db\ActiveQuery
      */
     public function getMenus()
@@ -110,6 +120,10 @@ class Menu extends \yii\db\ActiveRecord
         return $this->hasMany(Menu::className(), ['parent' => 'id']);
     }
 
+    /**
+     * Get saved routes.
+     * @return array
+     */
     public static function getSavedRoutes()
     {
         $result = [];

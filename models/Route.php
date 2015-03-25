@@ -1,14 +1,21 @@
 <?php
 namespace mdm\admin\models;
 /**
- * Description of Route
+ * Route
  *
- * @author MDMunir
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
 class Route extends \yii\base\Model
 {
+    /**
+     * @var string Route value. 
+     */
     public $route;
 
+    /**
+     * @inheritdoc
+     */
     public function rules()
     {
         return[

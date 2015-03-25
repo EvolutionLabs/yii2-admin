@@ -11,7 +11,8 @@ use mdm\admin\components\RouteRule;
 /**
  * Description of BizRule
  *
- * @author MDMunir
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
 class BizRule extends Model
 {
@@ -28,8 +29,18 @@ class BizRule extends Model
     }
 
     /**
-     *
-     * @param  array                                                    $params
+     * @inheritdoc
+     */
+    public function attributeLabels()
+    {
+        return [
+            'name' => Yii::t('rbac-admin', 'Name'),
+        ];
+    }
+
+    /**
+     * Search BizRule
+     * @param array $params
      * @return \yii\data\ActiveDataProvider|\yii\data\ArrayDataProvider
      */
     public function search($params)

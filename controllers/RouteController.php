@@ -1,6 +1,6 @@
 <?php
 
-namespace mdm\admin\items;
+namespace mdm\admin\controllers;
 
 use Yii;
 use mdm\admin\models\Route;
@@ -14,10 +14,20 @@ use yii\helpers\Inflector;
 use yii\helpers\VarDumper;
 use Exception;
 
+/**
+ * Description of RuleController
+ *
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
+ */
 class RouteController extends \yii\web\Controller
 {
     const CACHE_TAG = 'mdm.admin.route';
 
+    /**
+     * Lists all Route models.
+     * @return mixed
+     */
     public function actionIndex()
     {
         $manager = Yii::$app->getAuthManager();
@@ -45,6 +55,11 @@ class RouteController extends \yii\web\Controller
         return $this->render('index', ['new' => $routes, 'exists' => $exists, 'existsOptions' => $existsOptions]);
     }
 
+    /**
+     * Creates a new AuthItem model.
+     * If creation is successful, the browser will be redirected to the 'view' page.
+     * @return mixed
+     */
     public function actionCreate()
     {
         $model = new Route;
@@ -60,6 +75,11 @@ class RouteController extends \yii\web\Controller
         return $this->render('create', ['model' => $model]);
     }
 
+    /**
+     * Assign or remove items
+     * @param string $action
+     * @return array
+     */
     public function actionAssign($action)
     {
         $post = Yii::$app->getRequest()->post();
@@ -73,7 +93,7 @@ class RouteController extends \yii\web\Controller
                 $child = $manager->getPermission($route);
                 try {
                     $manager->remove($child);
-                } catch (Exception $e) {
+                } catch (Exception $exc) {
                     $error[] = $exc->getMessage();
                 }
             }
@@ -86,6 +106,13 @@ class RouteController extends \yii\web\Controller
             $error];
     }
 
+    /**
+     * Search Route
+     * @param string $target
+     * @param string $term
+     * @param string $refresh
+     * @return array
+     */
     public function actionRouteSearch($target, $term = '', $refresh = '0')
     {
         if ($refresh == '1') {
@@ -127,6 +154,10 @@ class RouteController extends \yii\web\Controller
         return Html::renderSelectOptions('', $result, $options);
     }
 
+    /**
+     * Save one or more route(s)
+     * @param array $routes
+     */
     private function saveNew($routes)
     {
         $manager = Yii::$app->getAuthManager();
@@ -158,6 +189,10 @@ class RouteController extends \yii\web\Controller
         }
     }
 
+    /**
+     * Get list of application routes
+     * @return array
+     */
     public function getAppRoutes()
     {
         $key = __METHOD__;
@@ -176,9 +211,9 @@ class RouteController extends \yii\web\Controller
     }
 
     /**
-     *
+     * Get route(s) recrusive
      * @param \yii\base\Module $module
-     * @param array            $result
+     * @param array $result
      */
     private function getRouteRecrusive($module, &$result)
     {
@@ -204,6 +239,14 @@ class RouteController extends \yii\web\Controller
         Yii::endProfile($token, __METHOD__);
     }
 
+    /**
+     * Get list controller under module
+     * @param \yii\base\Module $module
+     * @param string $namespace
+     * @param string $prefix
+     * @param mixed $result
+     * @return mixed
+     */
     private function getControllerFiles($module, $namespace, $prefix, &$result)
     {
         $path = @Yii::getAlias('@' . str_replace('\\', '/', $namespace));
@@ -233,6 +276,13 @@ class RouteController extends \yii\web\Controller
         Yii::endProfile($token, __METHOD__);
     }
 
+    /**
+     * Get list action of controller
+     * @param mixed $type
+     * @param string $id
+     * @param \yii\base\Module $module
+     * @param string $result
+     */
     private function getControllerActions($type, $id, $module, &$result)
     {
         $token = "Create controller with cofig=" . VarDumper::dumpAsString($type) . " and id='$id'";
@@ -249,9 +299,9 @@ class RouteController extends \yii\web\Controller
     }
 
     /**
-     *
+     * Get route of action
      * @param \yii\base\Controller $controller
-     * @param Array                $result     all controller action.
+     * @param array $result all controller action.
      */
     private function getActionRoutes($controller, &$result)
     {
@@ -275,6 +325,9 @@ class RouteController extends \yii\web\Controller
         Yii::endProfile($token, __METHOD__);
     }
 
+    /**
+     * Ivalidate cache
+     */
     protected function invalidate()
     {
         if (Configs::instance()->cache !== null) {
@@ -282,7 +335,10 @@ class RouteController extends \yii\web\Controller
         }
     }
 
-    public function setDefaultRule()
+    /**
+     * Set default rule of parameterize route.
+     */
+    protected function setDefaultRule()
     {
         if (Yii::$app->authManager->getRule(RouteRule::RULE_NAME) === null) {
             Yii::$app->authManager->add(Yii::createObject([

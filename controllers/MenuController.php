@@ -1,6 +1,6 @@
 <?php
 
-namespace mdm\admin\items;
+namespace mdm\admin\controllers;
 
 use Yii;
 use mdm\admin\models\Menu;
@@ -8,13 +8,20 @@ use mdm\admin\models\searchs\Menu as MenuSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use mdm\admin\components\MenuHelper;
 
 /**
  * MenuController implements the CRUD actions for Menu model.
+ *
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
 class MenuController extends Controller
 {
 
+    /**
+     * @inheritdoc
+     */
     public function behaviors()
     {
         return [
@@ -64,6 +71,7 @@ class MenuController extends Controller
         $model = new Menu;
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            MenuHelper::invalidate();
             return $this->redirect(['view', 'id' => $model->id]);
         } else {
             return $this->render('create', [
@@ -85,6 +93,7 @@ class MenuController extends Controller
             $model->parent_name = $model->menuParent->name;
         }
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            MenuHelper::invalidate();
             return $this->redirect(['view', 'id' => $model->id]);
         } else {
             return $this->render('update', [
@@ -102,6 +111,7 @@ class MenuController extends Controller
     public function actionDelete($id)
     {
         $this->findModel($id)->delete();
+        MenuHelper::invalidate();
 
         return $this->redirect(['index']);
     }
@@ -109,8 +119,8 @@ class MenuController extends Controller
     /**
      * Finds the Menu model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param  integer               $id
-     * @return Menu                  the loaded model
+     * @param  integer $id
+     * @return Menu the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
     protected function findModel($id)

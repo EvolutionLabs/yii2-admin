@@ -1,6 +1,6 @@
 <?php
 
-namespace mdm\admin\items;
+namespace mdm\admin\controllers;
 
 use mdm\admin\models\AuthItem;
 use mdm\admin\models\searchs\AuthItem as AuthItemSearch;
@@ -10,14 +10,21 @@ use yii\filters\VerbFilter;
 use yii\rbac\Item;
 use Yii;
 use mdm\admin\components\MenuHelper;
+use yii\web\Response;
 use yii\helpers\Html;
 
 /**
  * AuthItemController implements the CRUD actions for AuthItem model.
+ *
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
-class RoleController extends Controller
+class PermissionController extends Controller
 {
 
+    /**
+     * @inheritdoc
+     */
     public function behaviors()
     {
         return [
@@ -36,8 +43,8 @@ class RoleController extends Controller
      */
     public function actionIndex()
     {
-        $searchModel = new AuthItemSearch(['type' => Item::TYPE_ROLE]);
-        $dataProvider = $searchModel->search(Yii::$app->request->getQueryParams());
+        $searchModel = new AuthItemSearch(['type' => Item::TYPE_PERMISSION]);
+        $dataProvider = $searchModel->search(Yii::$app->getRequest()->getQueryParams());
 
         return $this->render('index', [
                 'dataProvider' => $dataProvider,
@@ -47,7 +54,7 @@ class RoleController extends Controller
 
     /**
      * Displays a single AuthItem model.
-     * @param  string $id
+     * @param string $id
      * @return mixed
      */
     public function actionView($id)
@@ -55,32 +62,21 @@ class RoleController extends Controller
         $model = $this->findModel($id);
         $authManager = Yii::$app->getAuthManager();
         $avaliable = $assigned = [
-            'Roles' => [],
             'Permission' => [],
             'Routes' => [],
         ];
         $children = array_keys($authManager->getChildren($id));
         $children[] = $id;
-        foreach ($authManager->getRoles() as $name => $role) {
-            if (in_array($name, $children)) {
-                continue;
-            }
-            $avaliable['Roles'][$name] = $name;
-        }
         foreach ($authManager->getPermissions() as $name => $role) {
             if (in_array($name, $children)) {
                 continue;
             }
             $avaliable[$name[0] === '/' ? 'Routes' : 'Permission'][$name] = $name;
         }
-
         foreach ($authManager->getChildren($id) as $name => $child) {
-            if ($child->type == Item::TYPE_ROLE) {
-                $assigned['Roles'][$name] = $name;
-            } else {
-                $assigned[$name[0] === '/' ? 'Routes' : 'Permission'][$name] = $name;
-            }
+            $assigned[$name[0] === '/' ? 'Routes' : 'Permission'][$name] = $name;
         }
+
         $avaliable = array_filter($avaliable);
         $assigned = array_filter($assigned);
 
@@ -95,7 +91,7 @@ class RoleController extends Controller
     public function actionCreate()
     {
         $model = new AuthItem(null);
-        $model->type = Item::TYPE_ROLE;
+        $model->type = Item::TYPE_PERMISSION;
         if ($model->load(Yii::$app->getRequest()->post()) && $model->save()) {
             MenuHelper::invalidate();
 
@@ -138,61 +134,63 @@ class RoleController extends Controller
         return $this->redirect(['index']);
     }
 
+    /**
+     * Assign or remove items
+     * @param string $id
+     * @param string $action
+     * @return array
+     */
     public function actionAssign($id, $action)
     {
         $post = Yii::$app->getRequest()->post();
         $roles = $post['roles'];
         $manager = Yii::$app->getAuthManager();
-        $parent = $manager->getRole($id);
+        $parent = $manager->getPermission($id);
         $error = [];
         if ($action == 'assign') {
             foreach ($roles as $role) {
-                $child = $manager->getRole($role);
-                $child = $child ? : $manager->getPermission($role);
+                $child = $manager->getPermission($role);
                 try {
                     $manager->addChild($parent, $child);
-                } catch (\Exception $e) {
-                    $error[] = $e->getMessage();
+                } catch (\Exception $exc) {
+                    $error[] = $exc->getMessage();
                 }
             }
         } else {
             foreach ($roles as $role) {
-                $child = $manager->getRole($role);
-                $child = $child ? : $manager->getPermission($role);
+                $child = $manager->getPermission($role);
                 try {
                     $manager->removeChild($parent, $child);
-                } catch (\Exception $e) {
-                    $error[] = $e->getMessage();
+                } catch (\Exception $exc) {
+                    $error[] = $exc->getMessage();
                 }
             }
         }
         MenuHelper::invalidate();
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        Yii::$app->getResponse()->format = Response::FORMAT_JSON;
 
         return [$this->actionRoleSearch($id, 'avaliable', $post['search_av']),
             $this->actionRoleSearch($id, 'assigned', $post['search_asgn']),
             $error];
     }
 
+    /**
+     * Search role
+     * @param string $id
+     * @param string $target
+     * @param string $term
+     * @return array
+     */
     public function actionRoleSearch($id, $target, $term = '')
     {
         $result = [
-            'Roles' => [],
             'Permission' => [],
             'Routes' => [],
         ];
-        $authManager = Yii::$app->authManager;
+        $authManager = Yii::$app->getAuthManager();
         if ($target == 'avaliable') {
             $children = array_keys($authManager->getChildren($id));
             $children[] = $id;
-            foreach ($authManager->getRoles() as $name => $role) {
-                if (in_array($name, $children)) {
-                    continue;
-                }
-                if (empty($term) or strpos($name, $term) !== false) {
-                    $result['Roles'][$name] = $name;
-                }
-            }
             foreach ($authManager->getPermissions() as $name => $role) {
                 if (in_array($name, $children)) {
                     continue;
@@ -204,11 +202,7 @@ class RoleController extends Controller
         } else {
             foreach ($authManager->getChildren($id) as $name => $child) {
                 if (empty($term) or strpos($name, $term) !== false) {
-                    if ($child->type == Item::TYPE_ROLE) {
-                        $result['Roles'][$name] = $name;
-                    } else {
-                        $result[$name[0] === '/' ? 'Routes' : 'Permission'][$name] = $name;
-                    }
+                    $result[$name[0] === '/' ? 'Routes' : 'Permission'][$name] = $name;
                 }
             }
         }
@@ -225,7 +219,7 @@ class RoleController extends Controller
      */
     protected function findModel($id)
     {
-        $item = Yii::$app->getAuthManager()->getRole($id);
+        $item = Yii::$app->getAuthManager()->getPermission($id);
         if ($item) {
             return new AuthItem($item);
         } else {

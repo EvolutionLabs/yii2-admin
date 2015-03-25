@@ -16,6 +16,9 @@ use yii\helpers\Json;
  * @property string $data
  *
  * @property Item $item
+ *
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
 class AuthItem extends \yii\base\Model
 {
@@ -26,13 +29,12 @@ class AuthItem extends \yii\base\Model
     public $data;
 
     /**
-     *
      * @var Item
      */
     private $_item;
 
     /**
-     *
+     * Initialize object
      * @param Item  $item
      * @param array $config
      */
@@ -59,10 +61,27 @@ class AuthItem extends \yii\base\Model
                 'range' => array_keys(Yii::$app->authManager->getRules()),
                 'message' => 'Rule not exists'],
             [['name', 'type'], 'required'],
+            [['name'], 'unique', 'when' => function() {
+                return $this->isNewRecord || ($this->_item->name != $this->name);
+            }],
             [['type'], 'integer'],
             [['description', 'data', 'ruleName'], 'default'],
             [['name'], 'string', 'max' => 64]
         ];
+    }
+
+    public function unique()
+    {
+        $authManager = Yii::$app->authManager;
+        $value = $this->name;
+        if ($authManager->getRole($value) !== null || $authManager->getPermission($value) !== null) {
+            $message = Yii::t('yii', '{attribute} "{value}" has already been taken.');
+            $params = [
+                'attribute' => $this->getAttributeLabel('name'),
+                'value' => $value,
+            ];
+            $this->addError('name', Yii::$app->getI18n()->format($message, $params, Yii::$app->language));
+        }
     }
 
     /**
@@ -71,19 +90,28 @@ class AuthItem extends \yii\base\Model
     public function attributeLabels()
     {
         return [
-            'name' => 'Name',
-            'type' => 'Type',
-            'description' => 'Description',
-            'ruleName' => 'Rule Name',
-            'data' => 'Data',
+            'name' => Yii::t('rbac-admin', 'Name'),
+            'type' => Yii::t('rbac-admin', 'Type'),
+            'description' => Yii::t('rbac-admin', 'Description'),
+            'ruleName' => Yii::t('rbac-admin', 'Rule Name'),
+            'data' => Yii::t('rbac-admin', 'Data'),
         ];
     }
 
+    /**
+     * Check if is new record.
+     * @return boolean
+     */
     public function getIsNewRecord()
     {
         return $this->_item === null;
     }
 
+    /**
+     * Find role
+     * @param string $id
+     * @return null|\self
+     */
     public static function find($id)
     {
         $item = Yii::$app->authManager->getRole($id);
@@ -94,6 +122,10 @@ class AuthItem extends \yii\base\Model
         return null;
     }
 
+    /**
+     * Save role to [[\yii\rbac\authManager]]
+     * @return boolean
+     */
     public function save()
     {
         if ($this->validate()) {
@@ -126,7 +158,7 @@ class AuthItem extends \yii\base\Model
     }
 
     /**
-     *
+     * Get item
      * @return Item
      */
     public function getItem()
@@ -134,6 +166,11 @@ class AuthItem extends \yii\base\Model
         return $this->_item;
     }
 
+    /**
+     * Get type name
+     * @param  mixed $type
+     * @return string|array
+     */
     public static function getTypeName($type = null)
     {
         $result = [

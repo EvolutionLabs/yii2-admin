@@ -8,36 +8,61 @@ use yii\caching\Cache;
 use yii\helpers\ArrayHelper;
 
 /**
- * Description of Configs
+ * Configs
+ * Used for configure some value. To set config you can use [[\yii\base\Application::$params]]
+ * 
+ * ~~~
+ * return [
+ *     
+ *     'mdm.admin.configs' => [
+ *         'db' => 'customDb',
+ *         'menuTable' => 'admin_menu',
+ *     ]
+ * ];
+ * ~~~
+ * 
+ * or use [[\Yii::$container]]
+ * 
+ * ~~~
+ * Yii::$container->set('mdm\admin\components\Configs',[
+ *     'db' => 'customDb',
+ *     'menuTable' => 'admin_menu',
+ * ]);
+ * ~~~
  *
- * @author Misbahul D Munir (mdmunir) <misbahuldmunir@gmail.com>
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
 class Configs extends \yii\base\Object
 {
     /**
-     *
-     * @var Connection
+     * @var Connection Database connection.
      */
     public $db = 'db';
 
     /**
-     *
-     * @var Cache
+     * @var Cache Cache component.
      */
     public $cache = 'cache';
-    
+
     /**
-     * Cache duration. Default to a month.
-     * @var integer 
+     * @var integer Cache duration. Default to a month.
      */
     public $cacheDuration = 2592000;
 
     /**
-     *
-     * @var self
+     * @var string Menu table name.
+     */
+    public $menuTable = '{{%menu}}';
+    
+    /**
+     * @var self Instance of self
      */
     private static $_instance;
 
+    /**
+     * @inheritdoc
+     */
     public function init()
     {
         if ($this->db !== null && !($this->db instanceof Connection)) {
@@ -58,15 +83,15 @@ class Configs extends \yii\base\Object
     }
 
     /**
-     *
-     * @return self
+     * Create instance of self
+     * @return static
      */
     public static function instance()
     {
         if (self::$_instance === null) {
             $type = ArrayHelper::getValue(Yii::$app->params, 'mdm.admin.configs', []);
             if (is_array($type) && !isset($type['class'])) {
-                $type['class'] = self::className();
+                $type['class'] = static::className();
             }
 
             return self::$_instance = Yii::createObject($type);

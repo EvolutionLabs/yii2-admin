@@ -7,22 +7,62 @@ use yii\caching\TagDependency;
 use mdm\admin\models\Menu;
 
 /**
- * Description of MenuHelper
+ * MenuHelper used to generate menu depend of user role.
+ * Usage
+ * 
+ * ~~~
+ * use mdm\admin\components\MenuHelper;
+ * use yii\bootstrap\Nav;
  *
- * @author MDMunir
+ * echo Nav::widget([
+ *    'items' => MenuHelper::getAssignedMenu(Yii::$app->user->id)
+ * ]);
+ * ~~~
+ * 
+ * To reformat returned, provide callback to method.
+ * 
+ * ~~~
+ * $callback = function ($menu) {
+ *    $data = eval($menu['data']);
+ *    return [
+ *        'label' => $menu['name'],
+ *        'url' => [$menu['route']],
+ *        'options' => $data,
+ *        'items' => $menu['children']
+ *        ]
+ *    ]
+ * }
+ *
+ * $items = MenuHelper::getAssignedMenu(Yii::$app->user->id, null, $callback);
+ * ~~~
+ *
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
 class MenuHelper
 {
     const CACHE_TAG = 'mdm.admin.menu';
 
     /**
-     *
-     * @param  mixed    $userId
-     * @param  integer  $root
-     * @param  \Closure $callback function ($menu) {}
-     * @param  boolean  $refresh
+     * Use to get assigned menu of user.
+     * @param mixed $userId
+     * @param integer $root
+     * @param \Closure $callback use to reformat output.
+     * callback should have format like
+     * 
+     * ~~~
+     * function ($menu) {
+     *    return [
+     *        'label' => $menu['name'],
+     *        'url' => [$menu['route']],
+     *        'options' => $data,
+     *        'items' => $menu['children']
+     *        ]
+     *    ]
+     * }
+     * ~~~
+     * @param boolean  $refresh
      * @return array
-     *
      */
     public static function getAssignedMenu($userId, $root = null, $callback = null, $refresh = false)
     {
@@ -89,7 +129,7 @@ class MenuHelper
         }
 
         $key = [__METHOD__, $assigned, $root];
-        if ($refresh || $callback !== null || $cache === null || ($result = $cache->get($key) === false)) {
+        if ($refresh || $callback !== null || $cache === null || (($result = $cache->get($key)) === false)) {
             $result = static::normalizeMenu($assigned, $menus, $callback, $root);
             if ($cache !== null && $callback === null) {
                 $cache->set($key, $result, $config->cacheDuration, new TagDependency([
@@ -101,6 +141,12 @@ class MenuHelper
         return $result;
     }
 
+    /**
+     * Ensure all item menu has parent.
+     * @param  array $assigned
+     * @param  array $menus
+     * @return array
+     */
     private static function requiredParent($assigned, &$menus)
     {
         $l = count($assigned);
@@ -116,8 +162,8 @@ class MenuHelper
     }
 
     /**
-     * 
-     * @param string $route
+     * Parse route
+     * @param  string $route
      * @return mixed
      */
     public static function parseRoute($route)
@@ -131,11 +177,21 @@ class MenuHelper
                 $part = explode('=', $part);
                 $url[$part[0]] = isset($part[1]) ? $part[1] : '';
             }
+
             return $url;
-        } 
+        }
+
         return '#';
     }
 
+    /**
+     * Normalize menu
+     * @param  array $assigned
+     * @param  array $menus
+     * @param  Closure $callback
+     * @param  integer $parent
+     * @return array
+     */
     private static function normalizeMenu(&$assigned, &$menus, $callback, $parent = null)
     {
         $result = [];
@@ -166,6 +222,9 @@ class MenuHelper
         return $result;
     }
 
+    /**
+     * Use to invalidate cache.
+     */
     public static function invalidate()
     {
         if (Configs::instance()->cache !== null) {

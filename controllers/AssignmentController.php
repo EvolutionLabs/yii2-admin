@@ -1,27 +1,34 @@
 <?php
 
-namespace mdm\admin\items;
+namespace mdm\admin\controllers;
 
-use mdm\admin\models\Assigment;
-use mdm\admin\models\searchs\Assigment as AssigmentSearch;
+use Yii;
+use mdm\admin\models\Assignment;
+use mdm\admin\models\searchs\Assignment as AssignmentSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
-use Yii;
 use yii\helpers\Html;
 use mdm\admin\components\MenuHelper;
 use yii\web\Response;
+use yii\rbac\Item;
 
 /**
- * AssigmentController implements the CRUD actions for Assigment model.
+ * AssignmentController implements the CRUD actions for Assignment model.
+ *
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
-class AssigmentController extends Controller
+class AssignmentController extends Controller
 {
     public $userClassName;
     public $idField = 'id';
     public $usernameField = 'username';
     public $searchClass;
 
+    /**
+     * @inheritdoc
+     */
     public function init()
     {
         parent::init();
@@ -31,6 +38,9 @@ class AssigmentController extends Controller
         }
     }
 
+    /**
+     * @inheritdoc
+     */
     public function behaviors()
     {
         return [
@@ -44,14 +54,14 @@ class AssigmentController extends Controller
     }
 
     /**
-     * Lists all Assigment models.
+     * Lists all Assignment models.
      * @return mixed
      */
     public function actionIndex()
     {
 
         if ($this->searchClass === null) {
-            $searchModel = new AssigmentSearch;
+            $searchModel = new AssignmentSearch;
         } else {
             $class = $this->searchClass;
             $searchModel = new $class;
@@ -68,7 +78,7 @@ class AssigmentController extends Controller
     }
 
     /**
-     * Displays a single Assigment model.
+     * Displays a single Assignment model.
      * @param  integer $id
      * @return mixed
      */
@@ -77,13 +87,20 @@ class AssigmentController extends Controller
         $model = $this->findModel($id);
         $authManager = Yii::$app->authManager;
         $avaliable = [];
-        foreach ($authManager->getRoles() as $role) {
-            $avaliable[$role->name] = $role->name;
-        }
         $assigned = [];
         foreach ($authManager->getRolesByUser($id) as $role) {
-            $assigned[$role->name] = $role->name;
-            unset($avaliable[$role->name]);
+            $type = $role->type;
+            $assigned[$type == Item::TYPE_ROLE ? 'Roles' : 'Permissions'][$role->name] = $role->name;
+        }
+        foreach ($authManager->getRoles() as $role) {
+            if (!isset($assigned['Roles'][$role->name])) {
+                $avaliable['Roles'][$role->name] = $role->name;
+            }
+        }
+        foreach ($authManager->getPermissions() as $role) {
+            if ($role->name[0] !== '/' && !isset($assigned['Permissions'][$role->name])) {
+                $avaliable['Permissions'][$role->name] = $role->name;
+            }
         }
 
         return $this->render('view', [
@@ -95,6 +112,12 @@ class AssigmentController extends Controller
         ]);
     }
 
+    /**
+     * Assign or revoke assignment to user
+     * @param  integer $id
+     * @param  string  $action
+     * @return mixed
+     */
     public function actionAssign($id, $action)
     {
         $post = Yii::$app->request->post();
@@ -102,17 +125,21 @@ class AssigmentController extends Controller
         $manager = Yii::$app->authManager;
         $error = [];
         if ($action == 'assign') {
-            foreach ($roles as $role) {
+            foreach ($roles as $name) {
                 try {
-                    $manager->assign($manager->getRole($role), $id);
+                    $item = $manager->getRole($name);
+                    $item = $item ? : $manager->getPermission($name);
+                    $manager->assign($item, $id);
                 } catch (\Exception $exc) {
                     $error[] = $exc->getMessage();
                 }
             }
         } else {
-            foreach ($roles as $role) {
+            foreach ($roles as $name) {
                 try {
-                    $manager->revoke($manager->getRole($role), $id);
+                    $item = $manager->getRole($name);
+                    $item = $item ? : $manager->getPermission($name);
+                    $manager->revoke($item, $id);
                 } catch (\Exception $exc) {
                     $error[] = $exc->getMessage();
                 }
@@ -126,37 +153,57 @@ class AssigmentController extends Controller
             $error];
     }
 
+    /**
+     * Search roles of user
+     * @param  integer $id
+     * @param  string  $target
+     * @param  string  $term
+     * @return string
+     */
     public function actionRoleSearch($id, $target, $term = '')
     {
         $authManager = Yii::$app->authManager;
         $avaliable = [];
-        foreach ($authManager->getRoles() as $role) {
-            $avaliable[$role->name] = $role->name;
-        }
         $assigned = [];
         foreach ($authManager->getRolesByUser($id) as $role) {
-            $assigned[$role->name] = $role->name;
-            unset($avaliable[$role->name]);
+            $type = $role->type;
+            $assigned[$type == Item::TYPE_ROLE ? 'Roles' : 'Permissions'][$role->name] = $role->name;
         }
+        foreach ($authManager->getRoles() as $role) {
+            if (!isset($assigned['Roles'][$role->name])) {
+                $avaliable['Roles'][$role->name] = $role->name;
+            }
+        }
+        foreach ($authManager->getPermissions() as $role) {
+            if ($role->name[0] !== '/' && !isset($assigned['Permissions'][$role->name])) {
+                $avaliable['Permissions'][$role->name] = $role->name;
+            }
+        }
+
         $result = [];
+        $var = ${$target};
         if (!empty($term)) {
-            foreach (${$target} as $role) {
-                if (strpos($role, $term) !== false) {
-                    $result[$role] = $role;
+            foreach (['Roles', 'Permissions'] as $type) {
+                if (isset($var[$type])) {
+                    foreach ($var[$type] as $role) {
+                        if (strpos($role, $term) !== false) {
+                            $result[$type][$role] = $role;
+                        }
+                    }
                 }
             }
         } else {
-            $result = ${$target};
+            $result = $var;
         }
 
         return Html::renderSelectOptions('', $result);
     }
 
     /**
-     * Finds the Assigment model based on its primary key value.
+     * Finds the Assignment model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param  integer               $id
-     * @return Assigment             the loaded model
+     * @param  integer $id
+     * @return Assignment the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
     protected function findModel($id)
