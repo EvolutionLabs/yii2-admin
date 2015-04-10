@@ -2,7 +2,7 @@
 
 use yii\helpers\Html;
 use yii\grid\GridView;
-
+use yii\helpers\Url;
 /* @var $this yii\web\View */
 /* @var $searchModel mdm\admin\models\searchs\AuthAssignmentSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
@@ -24,8 +24,10 @@ $this->params['breadcrumbs'][] = $this->title;
         'filterModel' => $searchModel,
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
-
-            'item_name',
+            [
+                'attribute'=>'item_name',
+                'filter' => $items
+            ],
             [
                 'attribute'=>'email',
                 'value'=>function($model) {
@@ -34,7 +36,17 @@ $this->params['breadcrumbs'][] = $this->title;
                     }
                 }
             ],
-            ['class' => 'yii\grid\ActionColumn'],
+            [
+                'class' => 'yii\grid\ActionColumn',
+                'template' => '{view}',
+                'buttons' => [
+                    'view' => function ($url, $model){
+                        return Html::a('<span class="glyphicon glyphicon-eye-open"></span>', Url::toRoute(['assignment/view', 'id'=>$model->user_id]), [
+                            'title' => Yii::t('app', 'View'),
+                        ]);
+                    }
+                ],
+            ],
         ],
     ]); ?>
 

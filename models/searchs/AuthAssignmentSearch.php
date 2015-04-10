@@ -59,7 +59,7 @@ class AuthAssignmentSearch extends AuthAssignment
             'created_at' => $this->created_at,
         ]);
 
-        $query->andFilterWhere(['like', 'item_name', $this->item_name])
+        $query->andFilterWhere(['=', 'item_name', $this->item_name])
             ->andFilterWhere(['like', 'user_id', $this->user_id]);
         if($this->email) {
             $query->andFilterWhere(['like', 'user.email',$this->email]);

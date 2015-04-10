@@ -2,12 +2,15 @@
 
 namespace mdm\admin\controllers;
 
+use mdm\admin\models\AuthItem;
 use Yii;
 use mdm\admin\models\AuthAssignment;
 use mdm\admin\models\searchs\AuthAssignmentSearch;
+use yii\db\Query;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\rbac\Item;
 
 /**
  * AuthAssignmentController implements the CRUD actions for AuthAssignment model.
@@ -35,7 +38,10 @@ class AuthAssignmentController extends Controller
         $searchModel = new AuthAssignmentSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
+        $items = (new Query())->select('name')->from('auth_item')->where('type=1')->column();
+        $items = array_combine($items, $items);
         return $this->render('index', [
+            'items'=>$items,
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
