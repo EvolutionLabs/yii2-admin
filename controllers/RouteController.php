@@ -197,7 +197,7 @@ class RouteController extends \yii\web\Controller
     {
         $key = __METHOD__;
         $cache = Configs::instance()->cache;
-        if ($cache === null || ($result = $cache->get($key)) === false) {
+        if (1 || $cache === null || ($result = $cache->get($key)) === false) {
             $result = [];
             $this->getRouteRecrusive(Yii::$app, $result);
             if ($cache !== null) {
