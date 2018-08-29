@@ -60,7 +60,7 @@ class AuthItem extends Model
         return [
             [['ruleName'], 'checkRule'],
             [['name', 'type'], 'required'],
-            [['name'], 'unique', 'when' => function() {
+            [['name'], 'customUnique', 'when' => function() {
                 return $this->isNewRecord || ($this->_item->name != $this->name);
             }],
             [['type'], 'integer'],
@@ -72,7 +72,7 @@ class AuthItem extends Model
     /**
      * Check role is unique
      */
-    public function unique()
+    public function customUnique()
     {
         $authManager = Yii::$app->authManager;
         $value = $this->name;
